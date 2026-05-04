@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Scuttle</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b1a2e;--panel:#132038;--panel2:#1c2f4a;
+  --gold:#f59e0b;--gold-lt:#fcd34d;
+  --teal:#22d3ee;--green:#4ade80;--red:#f87171;--amber:#fb923c;
+  --p1:#22d3ee;--p2:#a78bfa;--cpu:#94a3b8;
+  --text:#e2e8f0;--muted:#94a3b8;--border:rgba(255,255,255,0.1);
+}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;background-image:radial-gradient(ellipse at 15% 10%,rgba(34,211,238,.07) 0%,transparent 45%),radial-gradient(ellipse at 85% 90%,rgba(245,158,11,.07) 0%,transparent 45%)}
+.screen{display:none;width:100%;max-width:700px}
+.screen.active{display:block}
+h1{font-family:'Fredoka One',cursive;font-size:2.8rem;color:var(--gold);letter-spacing:2px;text-align:center;line-height:1}
+.wave{text-align:center;color:var(--teal);opacity:.35;letter-spacing:4px;margin:10px 0 6px;font-size:.9rem}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:20px;font-weight:700;font-size:.95rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px}
+.card-title{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:14px}
+
+/* Setup */
+.mode-row{display:flex;gap:10px;margin-bottom:18px;background:var(--panel2);border-radius:12px;padding:5px}
+.mode-btn{flex:1;padding:10px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s}
+.mode-btn.active{background:var(--panel);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.players-config{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.names-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.name-group label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.name-input{width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;outline:none;transition:border-color .15s}
+.name-input:focus{border-color:var(--teal)}
+.cpu-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.9rem;font-weight:700;color:var(--muted)}
+.cpu-toggle input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--teal)}
+.cpu-toggle span{color:var(--text)}
+.variant-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.variant-card{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:16px 14px;cursor:pointer;transition:all .2s;text-align:center}
+.variant-card:hover{border-color:var(--teal);background:var(--panel2);transform:translateY(-2px)}
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.b-green{background:rgba(74,222,128,.18);color:var(--green)}
+.b-teal{background:rgba(34,211,238,.18);color:var(--teal)}
+.b-gold{background:rgba(245,158,11,.18);color:var(--gold)}
+.b-red{background:rgba(248,113,113,.18);color:var(--red)}
+.variant-name{font-family:'Fredoka One',cursive;font-size:1.35rem;margin-bottom:4px}
+.variant-desc{font-size:.8rem;color:var(--muted);line-height:1.5}
+.rules-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}
+.rules-box p{font-size:.86rem;color:var(--muted);line-height:1.7}
+.rules-box strong{color:var(--teal)}
+
+/* Scoreboard */
+.scoreboard{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:10px;gap:8px}
+.score-chip{text-align:center;flex:1}
+.sc-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:2px}
+.sc-val{font-family:'Fredoka One',cursive;font-size:1.3rem}
+.sc-p1 .sc-lbl,.sc-p1 .sc-val{color:var(--p1)}
+.sc-p2 .sc-lbl,.sc-p2 .sc-val{color:var(--p2)}
+.sc-cpu .sc-lbl,.sc-cpu .sc-val{color:var(--cpu)}
+.round-badge{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--teal);background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);padding:6px 12px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+
+/* Objective bar */
+.objective-bar{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:9px 16px;margin-bottom:14px;text-align:center;font-size:.86rem;font-weight:700;color:var(--gold-lt);line-height:1.6}
+.objective-bar .soft{color:var(--text);font-weight:400}
+
+/* Dice */
+.dice-pool{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:62px;align-items:center}
+.die{width:54px;height:54px;background:var(--panel2);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.6rem;cursor:pointer;transition:all .15s;user-select:none;color:var(--text)}
+.die:hover:not(.used){border-color:var(--teal);background:rgba(34,211,238,.08)}
+.die.selected{border-color:var(--gold);background:rgba(245,158,11,.15);color:var(--gold);transform:scale(1.1);box-shadow:0 0 14px rgba(245,158,11,.35)}
+.die.used{opacity:.25;cursor:default;pointer-events:none}
+@keyframes spin{0%{transform:rotate(-6deg) scale(1.05)}50%{transform:rotate(6deg) scale(.95)}100%{transform:rotate(-6deg) scale(1.05)}}
+.die.rolling{animation:spin .1s infinite;color:var(--teal);border-color:var(--teal)}
+
+/* Slots (P1) */
+.arrangement{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap}
+.num-group{display:flex;gap:6px}
+.slot{width:52px;height:64px;background:var(--panel2);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.7rem;color:var(--text);cursor:pointer;transition:all .15s}
+.slot:hover:not(.locked){border-color:var(--p1);background:rgba(34,211,238,.08)}
+.slot.filled{border-style:solid;border-color:var(--p1);background:rgba(34,211,238,.08);color:var(--p1)}
+.slot.highlight{border-color:var(--gold)}
+.slot.locked{cursor:default;border-color:rgba(34,211,238,.2)}
+.op{font-family:'Fredoka One',cursive;font-size:1.9rem;color:var(--gold)}
+
+/* P2 number inputs */
+.p2-entry{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.p2-num-input{width:52px;height:64px;background:var(--panel2);border:2px solid var(--border);border-radius:10px;text-align:center;font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--p2);outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.p2-num-input::-webkit-inner-spin-button,.p2-num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.p2-num-input:focus{border-color:var(--p2);background:rgba(167,139,250,.08)}
+.p2-num-wide{width:auto;min-width:52px;max-width:140px;padding:0 8px}
+
+/* Answer input */
+.answer-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center}
+.answer-prompt{font-size:.88rem;font-weight:700;color:var(--muted);margin-bottom:10px}
+.answer-prompt strong{color:var(--text)}
+.answer-row{display:flex;gap:10px;justify-content:center;align-items:center}
+.answer-input{width:150px;padding:9px 12px;border-radius:10px;background:var(--panel2);border:2px solid var(--border);color:var(--text);font-family:'Fredoka One',cursive;font-size:1.5rem;text-align:center;outline:none;transition:border-color .15s}
+.answer-input:focus{border-color:var(--teal)}
+.answer-input::-webkit-inner-spin-button,.answer-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.feedback{margin-top:10px;padding:9px 14px;border-radius:10px;font-weight:700;font-size:.9rem}
+.feedback.correct{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:var(--green)}
+.feedback.wrong{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+.feedback.tryagain{background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);color:var(--amber)}
+
+/* Computer */
+.comp-hidden{display:flex;align-items:center;gap:8px;justify-content:center}
+.hidden-tile{width:52px;height:64px;background:var(--panel2);border:2px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted)}
+.thinking{text-align:center;color:var(--muted);font-size:.83rem;margin-top:8px}
+.result-row{text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.result-eq{font-size:.83rem;color:var(--muted);margin-bottom:3px}
+.result-big{font-family:'Fredoka One',cursive;font-size:1.9rem}
+.p1-result{color:var(--p1)}.p2-result{color:var(--p2)}.cpu-result{color:var(--green)}
+
+/* Round result */
+.players-results{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:12px 0 8px}
+.pr-chip{text-align:center;background:var(--panel2);border-radius:12px;padding:12px 16px;min-width:110px}
+.pr-name{font-size:.68rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px}
+.pr-product{font-family:'Fredoka One',cursive;font-size:1.5rem}
+.pr-p1 .pr-name,.pr-p1 .pr-product{color:var(--p1)}
+.pr-p2 .pr-name,.pr-p2 .pr-product{color:var(--p2)}
+.pr-cpu .pr-name,.pr-cpu .pr-product{color:var(--cpu)}
+.totals-row{display:flex;justify-content:center;gap:20px;padding:10px 0;margin-top:8px;border-top:1px solid var(--border);flex-wrap:wrap}
+.tot-item{text-align:center}
+.tot-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700}
+.tot-val{font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--gold)}
+.min-badge{display:inline-block;padding:4px 12px;background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.2);border-radius:100px;font-size:.75rem;color:var(--muted);font-weight:700;margin-top:8px}
+
+/* Total check */
+.tc-scores-list{max-width:260px;margin:0 auto 14px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tc-row{display:flex;justify-content:space-between;padding:7px 14px;font-size:.92rem;font-weight:700}
+.tc-row:nth-child(even){background:rgba(255,255,255,.03)}
+.tc-row .tc-lbl{color:var(--muted)}
+.tc-row .tc-num{font-family:'Fredoka One',cursive;font-size:1rem}
+.tc-row.tc-last{border-top:2px solid var(--border);background:rgba(255,255,255,.05)}
+.tc-prompt{text-align:center;font-size:.9rem;font-weight:700;color:var(--muted);margin-bottom:12px}
+.tc-prompt strong{color:var(--text)}
+
+/* Pre-round check */
+.preround-card{background:rgba(34,211,238,.04);border:1px solid rgba(34,211,238,.22)}
+.pr-who-label{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.pr-who-p1{background:rgba(34,211,238,.15);color:var(--p1)}
+.pr-who-p2{background:rgba(167,139,250,.15);color:var(--p2)}
+.pr-math-setup{text-align:center;margin-bottom:14px}
+.pr-equation{font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--text);margin-bottom:4px}
+.pr-equation span.blank{color:var(--gold)}
+.pr-context-line{font-size:.84rem;color:var(--muted);line-height:1.5}
+.pr-context-line strong{color:var(--gold-lt)}
+.pr-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* Buttons */
+.btn-row{text-align:center;margin-top:14px}
+.btn{padding:10px 26px;border-radius:100px;border:none;font-family:'Nunito',sans-serif;font-size:.93rem;font-weight:800;cursor:pointer;transition:all .18s;display:inline-block}
+.btn-primary{background:var(--gold);color:#1a0a00}
+.btn-primary:hover{background:var(--gold-lt);transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,158,11,.35)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--teal);border:2px solid var(--teal);margin-left:10px}
+.btn-ghost:hover{background:rgba(34,211,238,.1);transform:translateY(-2px)}
+
+/* Player section divider */
+.player-divider{font-size:.72rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;padding:4px 10px;border-radius:100px;display:inline-block;margin-bottom:12px}
+.div-p1{background:rgba(34,211,238,.12);color:var(--p1)}
+.div-p2{background:rgba(167,139,250,.12);color:var(--p2)}
+.div-cpu{background:rgba(148,163,184,.12);color:var(--cpu)}
+
+/* End */
+.winners-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.winner-chip{text-align:center;padding:16px 20px;border-radius:14px;min-width:120px}
+.wc-1st{background:rgba(245,158,11,.12);border:2px solid var(--gold)}
+.wc-2nd{background:rgba(148,163,184,.08);border:1px solid var(--border)}
+.wc-emoji{font-size:1.8rem;margin-bottom:4px}
+.wc-name{font-family:'Fredoka One',cursive;font-size:1.1rem;margin-bottom:2px}
+.wc-score{font-size:.82rem;color:var(--muted)}
+.score-table{width:100%;border-collapse:collapse}
+.score-table th{font-size:.66rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:7px;text-align:center;border-bottom:1px solid var(--border);font-weight:700}
+.score-table td{padding:9px 7px;text-align:center;border-bottom:1px solid var(--border);font-weight:700;font-size:.92rem}
+.total-row td{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--teal)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.shake{animation:shake .32s ease}
+.exit-btn{background:transparent;border:none;color:var(--muted);font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .15s}
+.exit-btn:hover{color:var(--text)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2a1a00;border:1px solid var(--amber);color:var(--amber);padding:10px 20px;border-radius:100px;font-weight:700;font-size:.88rem;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ===== SETUP ===== -->
+<div id="s-setup" class="screen active">
+  <h1>Product Scuttle</h1>
+  <div class="wave">&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;</div>
+  <p class="subtitle">Choose your mode, then pick a variant to start</p>
+  <div class="mode-row">
+    <button class="mode-btn active" id="btn-solo" onclick="setMode('solo')">&#127926; Solo vs Computer</button>
+    <button class="mode-btn" id="btn-2p" onclick="setMode('2p')">&#128101; 2 Players</button>
+  </div>
+  <div id="players-config" style="display:none" class="players-config">
+    <div class="names-row">
+      <div class="name-group">
+        <label>Player 1 name <span style="color:var(--p1)">(screen sharer)</span></label>
+        <input type="text" class="name-input" id="p1-name" placeholder="Player 1" maxlength="16">
+      </div>
+      <div class="name-group">
+        <label>Player 2 name <span style="color:var(--p2)">(other person)</span></label>
+        <input type="text" class="name-input" id="p2-name" placeholder="Player 2" maxlength="16">
+      </div>
+    </div>
+    <label class="cpu-toggle">
+      <input type="checkbox" id="include-cpu" checked>
+      <span>Include computer as a third player</span>
+    </label>
+  </div>
+  <div class="variant-grid">
+    <div class="variant-card" onclick="startGame('2x1')">
+      <div class="badge b-green">Beginner</div>
+      <div class="variant-name">2-by-1</div>
+      <div class="variant-desc">2-digit &times; 1-digit<br>3 dice &nbsp;&middot;&nbsp; Min sum: 1,000</div>
+    </div>
+    <div class="variant-card" onclick="startGame('3x1')">
+      <div class="badge b-teal">Standard</div>
+      <div class="variant-name">3-by-1</div>
+      <div class="variant-desc">3-digit &times; 1-digit<br>4 dice &nbsp;&middot;&nbsp; Min sum: 10,000</div>
+    </div>
+    <div class="variant-card" onclick="startGame('4x1')">
+      <div class="badge b-gold">Advanced</div>
+      <div class="variant-name">4-by-1</div>
+      <div class="variant-desc">4-digit &times; 1-digit<br>5 dice &nbsp;&middot;&nbsp; Min sum: 100,000</div>
+    </div>
+    <div class="variant-card" onclick="startGame('2x2')">
+      <div class="badge b-red">Challenge</div>
+      <div class="variant-name">2-by-2</div>
+      <div class="variant-desc">2-digit &times; 2-digit<br>4 dice &nbsp;&middot;&nbsp; Min sum: 10,000</div>
+    </div>
+  </div>
+  <div class="rules-box">
+    <p><strong>How to play:</strong> Each round, dice are rolled and all players see the same digits. Arrange them into two numbers and multiply on paper. After 3 rounds, add your products. The player with the <strong>lowest total above the minimum sum wins</strong>. If nobody clears the minimum, the highest total wins. <strong>2-player tip:</strong> Player 2 reads their numbers and answer aloud, and Player 1 types it in.</p>
+  </div>
+</div>
+
+<!-- ===== GAME ===== -->
+<div id="s-game" class="screen">
+
+  <div style="text-align:right;margin-bottom:4px">
+    <button class="exit-btn" onclick="exitGame()">&#8592; Back to Menu</button>
+  </div>
+  <div class="scoreboard" id="g-scoreboard"></div>
+  <div class="objective-bar" id="g-obj"></div>
+  <div class="toast" id="g-toast"></div>
+
+  <!-- Dice -->
+  <div class="card">
+    <div class="card-title">&#127922; Rolled Dice</div>
+    <div class="dice-pool" id="g-pool"></div>
+    <div class="btn-row" id="g-rollbtn">
+      <button class="btn btn-primary" onclick="rollDice()">Roll the Dice!</button>
+    </div>
+    <p id="g-hint" style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:8px;display:none">Click a die to select it, then click a slot to place it</p>
+  </div>
+
+  <!-- Player 1 -->
+  <div class="card" id="g-p1card" style="display:none">
+    <div><span class="player-divider div-p1" id="g-p1label">Player 1</span></div>
+    <div class="arrangement" id="g-slots"></div>
+    <div id="g-p1answerarea" style="display:none">
+      <div class="answer-section">
+        <p class="answer-prompt">Do the multiplication on paper. <strong>What is your product?</strong></p>
+        <div class="answer-row">
+          <input type="number" class="answer-input" id="g-p1input" placeholder="?" autocomplete="off"
+            onkeydown="if(event.key==='Enter')submitP1()">
+          <button class="btn btn-primary" id="g-p1submit" onclick="submitP1()">Submit</button>
+        </div>
+        <div id="g-p1feedback" class="feedback" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player 2 (round entry) -->
+  <div class="card" id="g-p2card" style="display:none">
+    <div><span class="player-divider div-p2" id="g-p2label">Player 2</span></div>
+    <p style="font-size:.86rem;color:var(--muted);margin-bottom:14px" id="g-p2prompt"></p>
+    <div class="p2-entry" id="g-p2entry"></div>
+    <div class="answer-section">
+      <p class="answer-prompt">What answer did <strong id="g-p2name-ans">Player 2</strong> get?</p>
+      <div class="answer-row">
+        <input type="number" class="answer-input" id="g-p2input" placeholder="?" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitP2()">
+        <button class="btn btn-primary" id="g-p2submit" onclick="submitP2()">Submit</button>
+      </div>
+      <div id="g-p2feedback" class="feedback" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Computer -->
+  <div class="card" id="g-cpucard" style="display:none">
+    <div><span class="player-divider div-cpu">Computer</span></div>
+    <div id="g-cpudisplay"></div>
+  </div>
+
+  <!-- Round result -->
+  <div class="card" id="g-rresult" style="display:none">
+    <div class="card-title">Round Result</div>
+    <div class="players-results" id="g-prresults"></div>
+    <div class="totals-row" id="g-totals"></div>
+    <div style="text-align:center"><span class="min-badge" id="g-minbadge"></span></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="g-nextbtn"></button>
+    </div>
+  </div>
+
+  <!-- Total check (after round 3) -->
+  <div class="card preround-card" id="g-totalcheck" style="display:none">
+    <div class="card-title">&#10133; Calculate Your Total</div>
+
+    <div id="tc-p1section">
+      <div style="margin-bottom:10px"><span class="player-divider div-p1" id="tc-p1who"></span></div>
+      <div class="tc-scores-list" id="tc-p1scores"></div>
+      <p class="tc-prompt">Add up your three products. <strong>What is your total?</strong></p>
+      <div class="answer-row" style="justify-content:center">
+        <input type="number" class="answer-input" id="tc-p1input" placeholder="?" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitTotalP1()">
+        <button class="btn btn-primary" id="tc-p1btn" onclick="submitTotalP1()">Check</button>
+      </div>
+      <div id="tc-p1feedback" class="feedback" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <div id="tc-p2section" style="display:none">
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0">
+      <div style="margin-bottom:10px"><span class="player-divider div-p2" id="tc-p2who"></span></div>
+      <div class="tc-scores-list" id="tc-p2scores"></div>
+      <p class="tc-prompt">Ask <strong id="tc-p2askname"></strong> to add up their products. Type their answer.</p>
+      <div class="answer-row" style="justify-content:center">
+        <input type="number" class="answer-input" id="tc-p2input" placeholder="?" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitTotalP2()">
+        <button class="btn btn-primary" id="tc-p2btn" onclick="submitTotalP2()">Check</button>
+      </div>
+      <div id="tc-p2feedback" class="feedback" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <div class="btn-row" id="tc-continue" style="display:none">
+      <button class="btn btn-primary" onclick="showEnd()">See Final Results &rarr;</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== END ===== -->
+<div id="s-end" class="screen">
+  <h1>Game Over!</h1>
+  <div class="wave">&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;</div>
+  <div class="winners-row" id="e-winners"></div>
+  <div class="card">
+    <table class="score-table">
+      <thead id="e-thead"></thead>
+      <tbody id="e-tbody"></tbody>
+      <tfoot id="e-tfoot"></tfoot>
+    </table>
+    <p style="font-size:.76rem;color:var(--muted);text-align:center;margin-top:10px" id="e-minnote"></p>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="showSetup()">Play Again!</button>
+  </div>
+</div>
+
+</div>
+
+  <!-- Pre-round check -->
+  <div class="card preround-card" id="g-preround" style="display:none">
+    <div class="card-title">&#129504; Before Round <span id="pr-num"></span> &mdash; Quick Check</div>
+
+    <!-- Player 1 check -->
+    <div id="pr-p1section">
+      <div class="pr-math-setup">
+        <span class="pr-who-label pr-who-p1" id="pr-p1who"></span>
+        <div class="pr-equation" id="pr-p1equation"></div>
+        <div class="pr-context-line" id="pr-p1context"></div>
+      </div>
+      <div class="answer-row" style="justify-content:center">
+        <input type="number" class="answer-input" id="pr-p1input" placeholder="?" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitPreP1()">
+        <button class="btn btn-primary" id="pr-p1btn" onclick="submitPreP1()">Check</button>
+      </div>
+      <div id="pr-p1feedback" class="feedback" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <!-- Player 2 check (2P mode only, shown after P1 done) -->
+    <div id="pr-p2section" style="display:none">
+      <hr class="pr-divider">
+      <div class="pr-math-setup">
+        <span class="pr-who-label pr-who-p2" id="pr-p2who"></span>
+        <div class="pr-equation" id="pr-p2equation"></div>
+        <div class="pr-context-line" id="pr-p2context"></div>
+      </div>
+      <div class="answer-row" style="justify-content:center">
+        <input type="number" class="answer-input" id="pr-p2input" placeholder="?" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitPreP2()">
+        <button class="btn btn-primary" id="pr-p2btn" onclick="submitPreP2()">Check</button>
+      </div>
+      <div id="pr-p2feedback" class="feedback" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <!-- Continue button (shown after all checks done) -->
+    <div class="btn-row" id="pr-continue" style="display:none">
+      <button class="btn btn-primary" onclick="launchNextRound()">Start Round <span id="pr-startn"></span> &rarr;</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== END ===== -->
+<div id="s-end" class="screen">
+  <h1>Game Over!</h1>
+  <div class="wave">&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;&#9670;</div>
+  <div class="winners-row" id="e-winners"></div>
+  <div class="card">
+    <table class="score-table">
+      <thead id="e-thead"></thead>
+      <tbody id="e-tbody"></tbody>
+      <tfoot id="e-tfoot"></tfoot>
+    </table>
+    <p style="font-size:.76rem;color:var(--muted);text-align:center;margin-top:10px" id="e-minnote"></p>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="showSetup()">Play Again!</button>
+  </div>
+</div>
+
+<script>
+const VARIANTS={
+  '2x1':{name:'2-by-1',dice:3,d1:2,d2:1,min:1000},
+  '3x1':{name:'3-by-1',dice:4,d1:3,d2:1,min:10000},
+  '4x1':{name:'4-by-1',dice:5,d1:4,d2:1,min:100000},
+  '2x2':{name:'2-by-2',dice:4,d1:2,d2:2,min:10000}
+};
+let G={};
+let setupMode='solo';
+
+function $(id){return document.getElementById(id)}
+function hide(id){$(id).style.display='none'}
+function showEl(id,cls){const el=$(id);el.style.display='block';if(cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)}}
+function show(id){['s-setup','s-game','s-end'].forEach(s=>$(s).classList.remove('active'));$(id).classList.add('active')}
+function showSetup(){show('s-setup')}
+
+function setMode(m){
+  setupMode=m;
+  $('btn-solo').classList.toggle('active',m==='solo');
+  $('btn-2p').classList.toggle('active',m==='2p');
+  $('players-config').style.display=m==='2p'?'block':'none';
+}
+
+function startGame(vId){
+  const v=VARIANTS[vId];
+  const is2p=setupMode==='2p';
+  const withCpu=!is2p||$('include-cpu').checked;
+  const p1n=is2p?($('p1-name').value.trim()||'Player 1'):'You';
+  const p2n=is2p?($('p2-name').value.trim()||'Player 2'):'Player 2';
+  G={v,is2p,withCpu,p1name:p1n,p2name:p2n,round:1,dice:[],sel:null,used:[],
+    p1slots:[],p1attempts:0,p2n1:null,p2n2:null,p2attempts:0,
+    p1scores:[],p2scores:[],cpuscores:[],p1total:0,p2total:0,cputotal:0,phase:'roll'};
+  show('s-game');resetRound();
+}
+
+function buildScoreboard(){
+  let h=`<div class="score-chip sc-p1"><div class="sc-lbl">${G.p1name}</div><div class="sc-val" id="sb-p1">${G.p1total.toLocaleString()}</div></div>`;
+  h+=`<div class="round-badge" id="g-rlbl">Round ${G.round} of 3</div>`;
+  if(G.is2p) h+=`<div class="score-chip sc-p2"><div class="sc-lbl">${G.p2name}</div><div class="sc-val" id="sb-p2">${G.p2total.toLocaleString()}</div></div>`;
+  if(G.withCpu) h+=`<div class="score-chip sc-cpu"><div class="sc-lbl">Computer</div><div class="sc-val" id="sb-cpu">${G.cputotal.toLocaleString()}</div></div>`;
+  $('g-scoreboard').innerHTML=h;
+}
+function updateScoreboard(){
+  const f=(id,v)=>{const e=$(id);if(e)e.textContent=v.toLocaleString()};
+  f('sb-p1',G.p1total);f('sb-p2',G.p2total);f('sb-cpu',G.cputotal);
+  const rl=$('g-rlbl');if(rl)rl.textContent=`Round ${G.round} of 3`;
+}
+function setObj(){
+  const v=G.v;
+  $('g-obj').innerHTML=`<strong>Round ${G.round} of 3</strong> &nbsp;&#9670;&nbsp; `+
+    `<span class="soft">Make a ${v.d1}-digit &times; ${v.d2}-digit product using ${v.dice} dice.</span><br>`+
+    `Goal: 3-round total must be <strong>more than ${v.min.toLocaleString()}</strong> &mdash; lowest total over the target wins!`;
+}
+
+function resetRound(){
+  const v=G.v;
+  G.dice=[];G.sel=null;G.used=new Array(v.dice).fill(false);
+  G.p1slots=new Array(v.d1+v.d2).fill(null);G.p1attempts=0;
+  G.p2n1=null;G.p2n2=null;G.p2attempts=0;G.phase='roll';
+  buildScoreboard();setObj();
+  $('g-pool').innerHTML='';
+  $('g-rollbtn').innerHTML='<button class="btn btn-primary" onclick="rollDice()">Roll the Dice!</button>';
+  $('g-hint').style.display='none';
+  hide('g-p1card');hide('g-p2card');hide('g-cpucard');hide('g-rresult');hide('g-preround');hide('g-totalcheck');
+  $('g-p1answerarea').style.display='none';
+  $('g-p1feedback').style.display='none';
+  $('g-p1input').value='';$('g-p1input').disabled=false;$('g-p1submit').disabled=false;
+  $('g-p2feedback').style.display='none';
+  $('g-p2input').value='';$('g-p2input').disabled=false;$('g-p2submit').disabled=false;
+  $('g-p1label').textContent=G.p1name;
+  $('g-p2label').textContent=G.p2name;
+  $('g-p2name-ans').textContent=G.p2name;
+}
+
+function rollDice(){
+  if(G.phase!=='roll')return;G.phase='rolling';
+  const v=G.v;const pool=$('g-pool');
+  $('g-rollbtn').innerHTML='';pool.innerHTML='';
+  for(let i=0;i<v.dice;i++){
+    const d=document.createElement('div');d.className='die rolling';d.id=`d${i}`;d.textContent='?';pool.appendChild(d);
+  }
+  const t=setInterval(()=>{for(let i=0;i<v.dice;i++){const e=$(`d${i}`);if(e)e.textContent=Math.floor(Math.random()*10)}},80);
+  setTimeout(()=>{
+    clearInterval(t);
+    for(let i=0;i<v.dice;i++){
+      G.dice[i]=Math.floor(Math.random()*10);
+      const e=$(`d${i}`);e.className='die';e.textContent=G.dice[i];e.onclick=()=>pickDie(i);
+    }
+    G.phase='placing';$('g-hint').style.display='block';
+    showEl('g-p1card','fade');
+    if(G.withCpu){showEl('g-cpucard');renderCpuHidden();}
+    renderSlots();
+  },1200);
+}
+
+function pickDie(i){if(G.phase!=='placing'||G.used[i])return;G.sel=(G.sel===i)?null:i;refreshDice();renderSlots()}
+function refreshDice(){for(let i=0;i<G.v.dice;i++){const e=$(`d${i}`);if(!e)continue;e.className=G.used[i]?'die used':G.sel===i?'die selected':'die'}}
+function renderSlots(){
+  const v=G.v,c=$('g-slots');c.innerHTML='';
+  const g1=document.createElement('div');g1.className='num-group';
+  for(let i=0;i<v.d1;i++)g1.appendChild(mkSlot(i));c.appendChild(g1);
+  const op=document.createElement('div');op.className='op';op.textContent='×';c.appendChild(op);
+  const g2=document.createElement('div');g2.className='num-group';
+  for(let i=v.d1;i<v.d1+v.d2;i++)g2.appendChild(mkSlot(i));c.appendChild(g2);
+  $('g-p1answerarea').style.display=G.p1slots.every(s=>s!==null)?'block':'none';
+}
+function mkSlot(i){
+  const s=document.createElement('div'),di=G.p1slots[i];
+  if(di!==null){s.className='slot filled';s.textContent=G.dice[di];}
+  else{s.className=G.sel!==null?'slot highlight':'slot';s.textContent='_';}
+  s.onclick=()=>tapSlot(i);return s;
+}
+function tapSlot(i){
+  if(G.phase!=='placing')return;
+  const ex=G.p1slots[i];
+  if(ex!==null){
+    G.used[ex]=false;G.p1slots[i]=null;if(G.sel===null)G.sel=ex;
+  } else if(G.sel!==null){
+    const v=G.v;
+    const isLeading=(i===0&&v.d1>1)||(i===v.d1&&v.d2>1);
+    if(isLeading&&G.dice[G.sel]===0){
+      showToast("Can\u2019t place 0 as the first digit of a number!");
+      return;
+    }
+    G.p1slots[i]=G.sel;G.used[G.sel]=true;G.sel=null;
+  }
+  refreshDice();renderSlots();
+}
+
+function submitP1(){
+  const raw=$('g-p1input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);const v=G.v;
+  const n1=parseInt(G.p1slots.slice(0,v.d1).map(i=>G.dice[i]).join(''));
+  const n2=parseInt(G.p1slots.slice(v.d1).map(i=>G.dice[i]).join(''));
+  const actual=n1*n2;
+  const fb=$('g-p1feedback');fb.style.display='block';
+  if(typed===actual){
+    fb.className='feedback correct';fb.textContent=`\u2713 Correct! ${n1.toLocaleString()} \xd7 ${n2.toLocaleString()} = ${actual.toLocaleString()}`;
+    G.p1product=actual;lockP1();G.is2p?showP2Section():revealCpu(actual,null);
+  } else if(G.p1attempts===0){
+    G.p1attempts=1;fb.className='feedback tryagain';fb.textContent='Not quite \u2014 check your work and try again!';shake('g-p1input');
+  } else {
+    fb.className='feedback wrong';fb.textContent=`\u2717 The answer is ${n1.toLocaleString()} \xd7 ${n2.toLocaleString()} = ${actual.toLocaleString()}`;
+    G.p1product=actual;lockP1();G.is2p?showP2Section():revealCpu(actual,null);
+  }
+}
+function lockP1(){$('g-p1input').disabled=true;$('g-p1submit').disabled=true;document.querySelectorAll('.slot').forEach(s=>s.classList.add('locked'))}
+
+function showP2Section(){
+  const v=G.v;
+  $('g-p2prompt').textContent=`Ask ${G.p2name} what numbers they made. Type them in the boxes below.`;
+  const entry=$('g-p2entry');entry.innerHTML='';
+  const mkInp=(id,digits)=>{
+    const inp=document.createElement('input');
+    inp.type='number';inp.id=id;inp.placeholder='_'.repeat(Math.max(1,digits));
+    inp.className='p2-num-input'+(digits>1?' p2-num-wide':'');
+    inp.style.borderColor='rgba(167,139,250,.5)';
+    inp.style.width=digits<=1?'52px':(52+(digits-1)*28)+'px';
+    inp.autocomplete='off';return inp;
+  };
+  const g1=document.createElement('div');g1.className='num-group';
+  for(let i=0;i<v.d1;i++)g1.appendChild(mkInp(`p2-slot-${i}`,1));
+  entry.appendChild(g1);
+  const op=document.createElement('div');op.className='op';op.textContent='×';entry.appendChild(op);
+  const g2=document.createElement('div');g2.className='num-group';
+  for(let i=0;i<v.d2;i++)g2.appendChild(mkInp(`p2-slot-${v.d1+i}`,1));
+  entry.appendChild(g2);
+  showEl('g-p2card','fade');setTimeout(()=>{const f=$('p2-slot-0');if(f)f.focus()},100);
+}
+function getP2Numbers(){
+  const v=G.v;let n1='',n2='';
+  for(let i=0;i<v.d1;i++){const e=$(`p2-slot-${i}`);n1+=(e?e.value.trim():'')}
+  for(let i=0;i<v.d2;i++){const e=$(`p2-slot-${v.d1+i}`);n2+=(e?e.value.trim():'')}
+  return{n1:parseInt(n1)||0,n2:parseInt(n2)||0};
+}
+function submitP2(){
+  const raw=$('g-p2input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);const{n1,n2}=getP2Numbers();
+  if(!n1||!n2){
+    $('g-p2feedback').style.display='block';$('g-p2feedback').className='feedback tryagain';
+    $('g-p2feedback').textContent=`Please enter both of ${G.p2name}'s numbers first.`;return;
+  }
+  const actual=n1*n2;const fb=$('g-p2feedback');fb.style.display='block';
+  if(typed===actual){
+    fb.className='feedback correct';fb.textContent=`\u2713 Correct! ${n1.toLocaleString()} \xd7 ${n2.toLocaleString()} = ${actual.toLocaleString()}`;
+    G.p2product=actual;lockP2();revealCpu(G.p1product,actual);
+  } else if(G.p2attempts===0){
+    G.p2attempts=1;fb.className='feedback tryagain';
+    fb.textContent=`Not quite \u2014 ask ${G.p2name} to double-check and try again!`;shake('g-p2input');
+  } else {
+    fb.className='feedback wrong';fb.textContent=`\u2717 ${n1.toLocaleString()} \xd7 ${n2.toLocaleString()} = ${actual.toLocaleString()}`;
+    G.p2product=actual;lockP2();revealCpu(G.p1product,actual);
+  }
+}
+function lockP2(){$('g-p2input').disabled=true;$('g-p2submit').disabled=true;document.querySelectorAll('.p2-num-input').forEach(i=>{i.disabled=true})}
+
+function renderCpuHidden(){
+  const v=G.v;let h='<div class="comp-hidden"><div class="num-group">';
+  for(let i=0;i<v.d1;i++)h+='<div class="hidden-tile">?</div>';
+  h+='</div><div class="op">\xd7</div><div class="num-group">';
+  for(let i=0;i<v.d2;i++)h+='<div class="hidden-tile">?</div>';
+  h+='</div></div><p class="thinking">Working it out\u2026</p>';
+  $('g-cpudisplay').innerHTML=h;
+}
+function compSlots(){
+  const v=G.v,s=G.dice.map((val,i)=>({val,i})).sort((a,b)=>b.val-a.val);
+  const sl=new Array(v.d1+v.d2).fill(null);
+  if(v.d2===1){sl[v.d1]=s[0].i;for(let j=0;j<v.d1;j++)sl[j]=s[j+1].i;}
+  else{sl[0]=s[0].i;sl[2]=s[1].i;sl[3]=s[2].i;sl[1]=s[3].i;}
+  return sl;
+}
+function revealCpu(p1prod,p2prod){
+  G.phase='revealing';
+  if(!G.withCpu){finalizeRound(p1prod,p2prod,null);return;}
+  setTimeout(()=>{
+    const v=G.v,cs=compSlots();
+    const cn1=parseInt(cs.slice(0,v.d1).map(i=>G.dice[i]).join(''));
+    const cn2=parseInt(cs.slice(v.d1).map(i=>G.dice[i]).join(''));
+    const cprod=cn1*cn2;
+    let h='<div class="arrangement"><div class="num-group">';
+    for(let i=0;i<v.d1;i++)h+=`<div class="slot filled locked" style="border-color:var(--cpu);background:rgba(148,163,184,.08);color:var(--cpu)">${G.dice[cs[i]]}</div>`;
+    h+=`</div><div class="op">\xd7</div><div class="num-group">`;
+    for(let i=v.d1;i<v.d1+v.d2;i++)h+=`<div class="slot filled locked" style="border-color:var(--cpu);background:rgba(148,163,184,.08);color:var(--cpu)">${G.dice[cs[i]]}</div>`;
+    h+=`</div></div><div class="result-row"><div class="result-eq">${cn1.toLocaleString()} \xd7 ${cn2.toLocaleString()} =</div><div class="result-big cpu-result">${cprod.toLocaleString()}</div></div>`;
+    $('g-cpudisplay').innerHTML=h;$('g-cpudisplay').classList.add('fade');
+    finalizeRound(p1prod,p2prod,cprod);
+  },600);
+}
+function finalizeRound(p1prod,p2prod,cprod){
+  G.p1scores.push(p1prod);G.p1total+=p1prod;
+  if(G.is2p){G.p2scores.push(p2prod);G.p2total+=p2prod;}
+  if(G.withCpu){G.cpuscores.push(cprod);G.cputotal+=cprod;}
+  updateScoreboard();setTimeout(()=>showRR(p1prod,p2prod,cprod),400);
+}
+function showRR(p1p,p2p,cpup){
+  showEl('g-rresult','fade');
+  let chips=`<div class="pr-chip pr-p1"><div class="pr-name">${G.p1name}</div><div class="pr-product p1-result">${p1p.toLocaleString()}</div></div>`;
+  if(G.is2p)chips+=`<div class="pr-chip pr-p2"><div class="pr-name">${G.p2name}</div><div class="pr-product p2-result">${p2p.toLocaleString()}</div></div>`;
+  if(G.withCpu)chips+=`<div class="pr-chip pr-cpu"><div class="pr-name">Computer</div><div class="pr-product">${cpup.toLocaleString()}</div></div>`;
+  $('g-prresults').innerHTML=chips;
+  if(G.round>=3){
+    // Don't reveal totals — players will calculate them
+    $('g-totals').innerHTML=`<div style="text-align:center;color:var(--muted);font-size:.86rem;font-weight:700;padding:8px 0">Add up all three rounds \u2014 do you know your total?</div>`;
+  } else {
+    let tots=`<div class="tot-item"><div class="tot-lbl">${G.p1name} total</div><div class="tot-val" style="color:var(--p1)">${G.p1total.toLocaleString()}</div></div>`;
+    if(G.is2p)tots+=`<div class="tot-item"><div class="tot-lbl">${G.p2name} total</div><div class="tot-val" style="color:var(--p2)">${G.p2total.toLocaleString()}</div></div>`;
+    if(G.withCpu)tots+=`<div class="tot-item"><div class="tot-lbl">Computer total</div><div class="tot-val" style="color:var(--cpu)">${G.cputotal.toLocaleString()}</div></div>`;
+    $('g-totals').innerHTML=tots;
+  }
+  $('g-minbadge').textContent=`Target to win: more than ${G.v.min.toLocaleString()}`;
+  const nb=$('g-nextbtn');
+  if(G.round>=3){nb.textContent='Calculate Your Totals \u2192';nb.onclick=showTotalCheck;}
+  else{nb.textContent=`Check Before Round ${G.round+1} \u2192`;nb.onclick=showPreRound;}
+}
+
+// ---- PRE-ROUND CHECK ----
+
+function prEquation(cur,tgt){
+  // Returns HTML showing the subtraction clearly
+  if(cur>=tgt){
+    return `${cur.toLocaleString()} \u2212 ${tgt.toLocaleString()} = <span class="blank">?</span>`;
+  } else {
+    return `${tgt.toLocaleString()} \u2212 ${cur.toLocaleString()} = <span class="blank">?</span>`;
+  }
+}
+function prContext(name,cur,tgt){
+  const verb=name==='You'?'have':'has';
+  if(cur>=tgt){
+    return `<strong>${name}</strong> ${verb} ${cur.toLocaleString()} &mdash; already over ${tgt.toLocaleString()}! By how much?`;
+  } else {
+    return `<strong>${name}</strong> ${verb} ${cur.toLocaleString()}. The target is ${tgt.toLocaleString()}. How much more is needed?`;
+  }
+}
+function prCorrectVal(cur,tgt){return cur>=tgt?cur-tgt:tgt-cur}
+function prIsCorrect(typed,cur,tgt){
+  const cv=prCorrectVal(cur,tgt);
+  return typed===cv||(cur<tgt&&typed===cv+1);
+}
+
+function showPreRound(){
+  hide('g-rresult');
+  const nr=G.round+1,tgt=G.v.min;
+  $('pr-num').textContent=nr;$('pr-startn').textContent=nr;
+
+  // Set up P1 check
+  $('pr-p1who').textContent=G.p1name;
+  $('pr-p1equation').innerHTML=prEquation(G.p1total,tgt);
+  $('pr-p1context').innerHTML=prContext(G.p1name,G.p1total,tgt);
+  $('pr-p1input').value='';$('pr-p1input').disabled=false;
+  $('pr-p1btn').disabled=false;$('pr-p1btn').dataset.att='0';
+  hide('pr-p1feedback');
+
+  // Hide P2 section and continue until P1 done
+  hide('pr-p2section');hide('pr-continue');
+
+  showEl('g-preround','fade');
+  setTimeout(()=>$('pr-p1input').focus(),100);
+}
+
+function submitPreP1(){
+  const raw=$('pr-p1input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);
+  const cur=G.p1total,tgt=G.v.min,cv=prCorrectVal(cur,tgt);
+  const fb=$('pr-p1feedback');fb.style.display='block';
+  const btn=$('pr-p1btn'),att=parseInt(btn.dataset.att||'0');
+  if(prIsCorrect(typed,cur,tgt)){
+    const msg=cur>=tgt
+      ?`\u2713 Correct! ${cur.toLocaleString()} \u2212 ${tgt.toLocaleString()} = ${cv.toLocaleString()}. Already over \u2014 try to stay as low as possible!`
+      :`\u2713 Correct! ${tgt.toLocaleString()} \u2212 ${cur.toLocaleString()} = ${cv.toLocaleString()}. Need more than ${cv.toLocaleString()} in remaining round(s).`;
+    fb.className='feedback correct';fb.textContent=msg;
+    $('pr-p1input').disabled=true;btn.disabled=true;
+    // Now either show P2 check or the continue button
+    G.is2p ? showPreP2() : showEl('pr-continue');
+  } else if(att===0){
+    btn.dataset.att='1';fb.className='feedback tryagain';fb.textContent='Not quite \u2014 check the subtraction and try again!';shake('pr-p1input');
+  } else {
+    const msg=cur>=tgt
+      ?`\u2717 ${cur.toLocaleString()} \u2212 ${tgt.toLocaleString()} = ${cv.toLocaleString()}. Already over the target!`
+      :`\u2717 ${tgt.toLocaleString()} \u2212 ${cur.toLocaleString()} = ${cv.toLocaleString()}. That\u2019s how much more is needed.`;
+    fb.className='feedback wrong';fb.textContent=msg;
+    $('pr-p1input').disabled=true;btn.disabled=true;
+    G.is2p ? showPreP2() : showEl('pr-continue');
+  }
+}
+
+function showPreP2(){
+  const tgt=G.v.min;
+  $('pr-p2who').textContent=G.p2name;
+  $('pr-p2equation').innerHTML=prEquation(G.p2total,tgt);
+  $('pr-p2context').innerHTML=prContext(G.p2name,G.p2total,tgt)+' <em style="color:var(--muted);font-size:.82em">(ask them aloud \u2014 type what they say)</em>';
+  $('pr-p2input').value='';$('pr-p2input').disabled=false;
+  $('pr-p2btn').disabled=false;$('pr-p2btn').dataset.att='0';
+  hide('pr-p2feedback');
+  showEl('pr-p2section','fade');
+  setTimeout(()=>$('pr-p2input').focus(),100);
+}
+
+function submitPreP2(){
+  const raw=$('pr-p2input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);
+  const cur=G.p2total,tgt=G.v.min,cv=prCorrectVal(cur,tgt);
+  const fb=$('pr-p2feedback');fb.style.display='block';
+  const btn=$('pr-p2btn'),att=parseInt(btn.dataset.att||'0');
+  if(prIsCorrect(typed,cur,tgt)){
+    const msg=cur>=tgt
+      ?`\u2713 Correct! ${cur.toLocaleString()} \u2212 ${tgt.toLocaleString()} = ${cv.toLocaleString()}. Already over \u2014 try to stay as low as possible!`
+      :`\u2713 Correct! ${tgt.toLocaleString()} \u2212 ${cur.toLocaleString()} = ${cv.toLocaleString()}. Need more than ${cv.toLocaleString()} in remaining round(s).`;
+    fb.className='feedback correct';fb.textContent=msg;
+    $('pr-p2input').disabled=true;btn.disabled=true;showEl('pr-continue');
+  } else if(att===0){
+    btn.dataset.att='1';fb.className='feedback tryagain';
+    fb.textContent=`Not quite \u2014 ask ${G.p2name} to check the subtraction and try again!`;shake('pr-p2input');
+  } else {
+    const msg=cur>=tgt
+      ?`\u2717 ${cur.toLocaleString()} \u2212 ${tgt.toLocaleString()} = ${cv.toLocaleString()}. Already over the target!`
+      :`\u2717 ${tgt.toLocaleString()} \u2212 ${cur.toLocaleString()} = ${cv.toLocaleString()}. That\u2019s how much more ${G.p2name} needs.`;
+    fb.className='feedback wrong';fb.textContent=msg;
+    $('pr-p2input').disabled=true;btn.disabled=true;showEl('pr-continue');
+  }
+}
+
+function launchNextRound(){G.round++;resetRound()}
+
+// ---- TOTAL CHECK (after round 3) ----
+
+function scoresList(scores,color){
+  let h='';
+  scores.forEach((s,i)=>{
+    h+=`<div class="tc-row"><span class="tc-lbl">Round ${i+1}</span><span class="tc-num" style="color:${color}">${s.toLocaleString()}</span></div>`;
+  });
+  h+=`<div class="tc-row tc-last"><span class="tc-lbl" style="font-weight:800">Total</span><span class="tc-num" style="color:var(--gold)">?</span></div>`;
+  return h;
+}
+
+function showTotalCheck(){
+  hide('g-rresult');
+  $('tc-p1who').textContent=G.p1name;
+  $('tc-p1scores').innerHTML=scoresList(G.p1scores,'var(--p1)');
+  $('tc-p1input').value='';$('tc-p1input').disabled=false;
+  $('tc-p1btn').disabled=false;$('tc-p1btn').dataset.att='0';
+  hide('tc-p1feedback');hide('tc-p2section');hide('tc-continue');
+  showEl('g-totalcheck','fade');
+  setTimeout(()=>$('tc-p1input').focus(),100);
+}
+
+function submitTotalP1(){
+  const raw=$('tc-p1input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);
+  const correct=G.p1total;
+  const fb=$('tc-p1feedback');fb.style.display='block';
+  const btn=$('tc-p1btn'),att=parseInt(btn.dataset.att||'0');
+  if(typed===correct){
+    fb.className='feedback correct';
+    fb.textContent=`\u2713 Correct! ${G.p1scores.map(s=>s.toLocaleString()).join(' + ')} = ${correct.toLocaleString()}`;
+    $('tc-p1input').disabled=true;btn.disabled=true;
+    G.is2p?showTotalCheckP2():showEl('tc-continue');
+  } else if(att===0){
+    btn.dataset.att='1';fb.className='feedback tryagain';fb.textContent='Not quite \u2014 check your addition and try again!';shake('tc-p1input');
+  } else {
+    fb.className='feedback wrong';
+    fb.textContent=`\u2717 ${G.p1scores.map(s=>s.toLocaleString()).join(' + ')} = ${correct.toLocaleString()}`;
+    $('tc-p1input').disabled=true;btn.disabled=true;
+    G.is2p?showTotalCheckP2():showEl('tc-continue');
+  }
+}
+
+function showTotalCheckP2(){
+  $('tc-p2who').textContent=G.p2name;
+  $('tc-p2askname').textContent=G.p2name;
+  $('tc-p2scores').innerHTML=scoresList(G.p2scores,'var(--p2)');
+  $('tc-p2input').value='';$('tc-p2input').disabled=false;
+  $('tc-p2btn').disabled=false;$('tc-p2btn').dataset.att='0';
+  hide('tc-p2feedback');
+  showEl('tc-p2section','fade');
+  setTimeout(()=>$('tc-p2input').focus(),100);
+}
+
+function submitTotalP2(){
+  const raw=$('tc-p2input').value.trim();if(!raw)return;
+  const typed=parseInt(raw);
+  const correct=G.p2total;
+  const fb=$('tc-p2feedback');fb.style.display='block';
+  const btn=$('tc-p2btn'),att=parseInt(btn.dataset.att||'0');
+  if(typed===correct){
+    fb.className='feedback correct';
+    fb.textContent=`\u2713 Correct! ${G.p2scores.map(s=>s.toLocaleString()).join(' + ')} = ${correct.toLocaleString()}`;
+    $('tc-p2input').disabled=true;btn.disabled=true;showEl('tc-continue');
+  } else if(att===0){
+    btn.dataset.att='1';fb.className='feedback tryagain';
+    fb.textContent=`Not quite \u2014 ask ${G.p2name} to check their addition and try again!`;shake('tc-p2input');
+  } else {
+    fb.className='feedback wrong';
+    fb.textContent=`\u2717 ${G.p2scores.map(s=>s.toLocaleString()).join(' + ')} = ${correct.toLocaleString()}`;
+    $('tc-p2input').disabled=true;btn.disabled=true;showEl('tc-continue');
+  }
+}
+
+function exitGame(){showSetup()}
+
+let toastTimer=null;
+function showToast(msg){
+  const t=$('g-toast');t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function shake(id){
+  const el=$(id);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');
+  el.value='';setTimeout(()=>{el.classList.remove('shake');el.focus()},340);
+}
+
+function showEnd(){
+  const v=G.v,m=v.min;
+  const players=[{name:G.p1name,total:G.p1total,scores:G.p1scores,cls:'p1'}];
+  if(G.is2p)players.push({name:G.p2name,total:G.p2total,scores:G.p2scores,cls:'p2'});
+  if(G.withCpu)players.push({name:'Computer',total:G.cputotal,scores:G.cpuscores,cls:'cpu'});
+  const over=players.filter(p=>p.total>m);
+  const candidates=over.length?over:players;
+  const best=over.length?Math.min(...candidates.map(p=>p.total)):Math.max(...candidates.map(p=>p.total));
+  players.forEach(p=>{p.isWinner=candidates.some(c=>c===p&&c.total===best)});
+  const sorted=[...players].sort((a,b)=>{if(a.isWinner!==b.isWinner)return a.isWinner?-1:1;return over.length?a.total-b.total:b.total-a.total});
+  let whtml='';
+  sorted.forEach((p,i)=>{
+    const emoji=p.isWinner?'&#127942;':i===1?'&#129352;':'&#129353;';
+    const col=p.cls==='p1'?'var(--p1)':p.cls==='p2'?'var(--p2)':'var(--cpu)';
+    whtml+=`<div class="winner-chip ${p.isWinner?'wc-1st':'wc-2nd'}"><div class="wc-emoji">${emoji}</div><div class="wc-name" style="color:${col}">${p.name}</div><div class="wc-score">${p.total.toLocaleString()}${p.isWinner?(over.length?' \u2713 lowest over target':' \u2713 highest total'):(over.length?' (over target)':' (under target)')}</div></div>`;
+  });
+  $('e-winners').innerHTML=whtml;
+  const heads=['Round',...players.map(p=>`<span style="color:${p.cls==='p1'?'var(--p1)':p.cls==='p2'?'var(--p2)':'var(--cpu)'}">${p.name}</span>`)];
+  $('e-thead').innerHTML='<tr>'+heads.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  let rows='';for(let i=0;i<3;i++){rows+=`<tr><td>Round ${i+1}</td>${players.map(p=>`<td>${p.scores[i]?.toLocaleString()??'\u2014'}</td>`).join('')}</tr>`}
+  $('e-tbody').innerHTML=rows;
+  $('e-tfoot').innerHTML='<tr class="total-row"><td>Total</td>'+players.map(p=>`<td>${p.total.toLocaleString()}</td>`).join('')+'</tr>';
+  $('e-minnote').textContent=`Target to qualify for win: more than ${m.toLocaleString()}`;
+  show('s-end');
+}
+</script>
+</body>
+</html>
